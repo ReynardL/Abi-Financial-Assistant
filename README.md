@@ -8,6 +8,25 @@ A **privacy-first MCP-based RAG AI agent** for personal finance. Abi connects to
 - 📊 **Local RAG**: Retrieval-augmented generation over your encrypted SQLite database
 - 🤖 **Multi-Model**: Works with GPT-4o, GPT-4o-mini, o4-mini, or local LLMs (Ollama, LM Studio)
 
+## ✅ User Prerequisites
+
+To run Abi, you need an **Ai Key** and a Budget (from **Actual Budget**).
+
+**1. Actual Budget (Your Financial Data)**
+Abi is an assistant for [Actual Budget](https://actualbudget.org/), a free and private local budgeting app.
+- **Get the App**: Download [Actual Budget](https://actualbudget.org/) and run it on your machine.
+- **Connect**:
+    - **Server URL**: Use your local URL (typically `http://localhost:5006`).
+    - **Sync ID**: Go to **Settings** → **Show Advanced Settings** in Actual to find this.
+    - **Password**: Your login password (if set).
+
+**2. OpenAI API Key (The Brains)**
+Abi uses OpenAI's intelligence to understand your questions.
+- Sign up at [platform.openai.com](https://platform.openai.com/signup).
+- Add $5-10 of credit (Abi is very cheap to run, but requires a funded account).
+- Go to **API Keys** → **Create new secret key**.
+- Copy this key (starts with `sk-...`).
+
 ## 🔧 Agent Tools
 
 The AI agent uses MCP-style function calling with 13 tools organized by capability:

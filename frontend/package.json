@@ -16,6 +16,7 @@
   "build": {
     "appId": "com.abi.financial-assistant",
     "productName": "Abi Financial Assistant",
+    "icon": "electron/icon.png",
     "directories": {
       "output": "dist-electron"
     },

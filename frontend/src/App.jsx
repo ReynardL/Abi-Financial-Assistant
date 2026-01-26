@@ -215,7 +215,7 @@ function App() {
           <div style={{ backgroundColor: 'white', borderRadius: '50%', padding: '6px', display: 'flex' }}>
             <Bot size={22} color="#6200ea" />
           </div>
-          <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 600, color: 'white' }}>Abi Assistant</h2>
+          <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 600, color: 'white' }}>Abi</h2>
         </div>
         
         <div style={{ display: 'flex', gap: '10px' }}>
@@ -290,7 +290,18 @@ function App() {
         }}>
           <AlertTriangle size={18} color="#856404" />
           <span style={{ color: '#856404', fontSize: '14px' }}>
-            Please configure your API keys in <button 
+             New here? Check the <button 
+              onClick={() => setShowHelp(true)} 
+              style={{ 
+                background: 'none', 
+                border: 'none', 
+                color: '#6200ea', 
+                textDecoration: 'underline', 
+                cursor: 'pointer',
+                fontSize: '14px',
+                padding: 0
+              }}
+            >Getting Started Guide</button> or configure <button 
               onClick={() => setShowSettings(true)} 
               style={{ 
                 background: 'none', 
@@ -301,7 +312,7 @@ function App() {
                 fontSize: '14px',
                 padding: 0
               }}
-            >Settings</button> to get started.
+            >Settings</button>.
           </span>
         </div>
       )}
@@ -344,7 +355,8 @@ function App() {
             height: '46px',
             borderRadius: '50%',
             border: 'none',
-            color: '#6200ea',
+            backgroundColor: '#6200ea',
+            color: 'white',
             cursor: configMissing ? 'not-allowed' : 'pointer',
             display: 'flex',
             alignItems: 'center',
@@ -418,15 +430,22 @@ function App() {
           <div style={{ backgroundColor: 'white', padding: '30px', borderRadius: '16px', maxWidth: '500px', width: '90%', position: 'relative', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
             <button onClick={() => setShowHelp(false)} style={{ position: 'absolute', top: '15px', right: '15px', background: 'none', border: 'none', cursor: 'pointer', color: '#8e8e93' }}><X size={24}/></button>
             <h2 style={{ marginTop: 0, color: '#6200ea' }}>Getting Started</h2>
-            <p><strong>1. Get Actual Budget:</strong> This assistant works with <a href="https://actualbudget.com" target="_blank" rel="noreferrer" style={{color: '#6200ea'}}>Actual Budget</a>. You need a running server (local or cloud).</p>
-            <p><strong>2. Connect Bridge:</strong></p>
-            <ul style={{ lineHeight: '1.6', paddingLeft: '20px' }}>
-                <li>Go to <strong>Settings</strong> in Actual Budget.</li>
-                <li>Click <strong>Show Advanced Settings</strong>.</li>
-                <li>Copy your <strong>Sync ID</strong>.</li>
-                <li>Ensure you have your <strong>Server URL</strong> and <strong>Password</strong>.</li>
+            
+            <p><strong>1. Get Actual Budget:</strong></p>
+            <ul style={{ lineHeight: '1.6', paddingLeft: '20px', fontSize: '14px' }}>
+                <li>Abi works with <a href="https://actualbudget.org/" target="_blank" rel="noreferrer" style={{color: '#6200ea'}}>Actual Budget</a>, the open-source local budgeting app.</li>
+                <li>Download and run it locally to keep your data private.</li>
+                <li>Once setup, find your <strong>Sync ID</strong> in Settings &gt; Show Advanced Settings.</li>
             </ul>
-            <p><strong>3. Configure:</strong> Click the Settings icon <Settings size={14} style={{display:'inline'}}/> in the header and enter your details to connect.</p>
+
+            <p><strong>2. Get OpenAI API Key:</strong></p>
+            <ul style={{ lineHeight: '1.6', paddingLeft: '20px', fontSize: '14px' }}>
+                <li>Sign up at <a href="https://platform.openai.com/signup" target="_blank" rel="noreferrer" style={{color: '#6200ea'}}>platform.openai.com</a></li>
+                <li>Go to <strong>API Keys</strong> and create a new secret key.</li>
+                <li>(Credits are required for the API to work).</li>
+            </ul>
+            
+            <p><strong>3. Connect Abi:</strong> Click <Settings size={14} style={{display:'inline', verticalAlign: 'middle'}}/> Settings and enter your API Key, Server URL (e.g. <code>http://localhost:5006</code>), Password, and Sync ID.</p>
           </div>
         </div>
       )}
