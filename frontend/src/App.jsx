@@ -23,7 +23,7 @@ function App() {
       custom_model: ''
   });
   const [modalImage, setModalImage] = useState(null);
-  const [configMissing, setConfigMissing] = useState(true); 
+  const [configMissing, setConfigMissing] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const messagesEndRef = useRef(null);
 
@@ -278,7 +278,7 @@ function App() {
       </div>
 
       {/* Config Warning Banner */}
-      {configMissing && (
+      {configMissing === true && (
         <div style={{
           padding: '12px 20px',
           backgroundColor: '#fff3cd',

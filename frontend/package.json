@@ -10,13 +10,13 @@
     "preview": "vite preview",
     "electron": "wait-on tcp:5173 && electron .",
     "start": "concurrently -k \"npm run dev\" \"npm run electron\"",
-    "dist": "npm run build && electron-builder --win --x64",
+    "dist": "npm run build && electron-builder --win --x64 && node -e \"const {rcedit} = require('rcedit'); rcedit('dist-electron/win-unpacked/Abi Financial Assistant.exe', {'icon': 'electron/icon.ico'}).then(() => console.log('Icon embedded!')).catch(e => console.error(e))\" && npx electron-builder --win --x64 --prepackaged dist-electron/win-unpacked",
     "dist:dir": "npm run build && electron-builder --win --x64 --dir"
   },
   "build": {
     "appId": "com.abi.financial-assistant",
     "productName": "Abi Financial Assistant",
-    "icon": "electron/icon.png",
+    "icon": "electron/icon.ico",
     "directories": {
       "output": "dist-electron"
     },
@@ -42,18 +42,22 @@
     ],
     "win": {
       "target": "nsis",
+      "icon": "electron/icon.ico",
       "signAndEditExecutable": false
     },
     "nsis": {
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "${productName} Setup.${ext}",
+      "installerIcon": "electron/icon.ico",
+      "uninstallerIcon": "electron/icon.ico"
     }
   },
   "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "dotenv": "^16.0.0",
     "lucide-react": "^0.344.0",
-    "dotenv": "^16.0.0"
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.66",
@@ -62,6 +66,7 @@
     "concurrently": "^8.2.2",
     "electron": "^29.1.0",
     "electron-builder": "^24.13.3",
+    "rcedit": "^5.0.2",
     "vite": "^5.2.0",
     "wait-on": "^7.2.0"
   }

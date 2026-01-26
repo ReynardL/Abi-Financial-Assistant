@@ -124,7 +124,9 @@ function startBackend() {
         ABI_BRIDGE_DIR: bridgeDir
       },
       stdio: 'pipe',
-      windowsHide: true
+      windowsHide: true,
+      detached: false,
+      shell: false
     });
     
     backendProcess.stdout.on('data', (data) => {
@@ -176,7 +178,7 @@ function createWindow() {
     title: "Abi - Financial Assistant",
     autoHideMenuBar: true,
     backgroundColor: '#f5f5f7',
-    icon: path.join(__dirname, 'icon.png')
+    icon: path.join(__dirname, 'icon.ico')
   });
 
   // In production, load the index.html from the dist folder
