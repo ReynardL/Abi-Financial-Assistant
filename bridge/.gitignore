@@ -1,0 +1,11 @@
+# Node modules
+node_modules/
+
+# Compiled executables (from pkg/nexe)
+*.exe
+
+# Temporary sync cache
+temp-cache/
+
+# Package lock can optionally be committed, but excluding for cleaner diffs
+# package-lock.json

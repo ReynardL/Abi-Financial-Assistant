@@ -1,0 +1,14 @@
+{
+  "name": "bridge",
+  "version": "1.0.0",
+  "description": "Bridge for syncing Actual Budget data",
+  "main": "sync.js",
+  "scripts": {
+    "start": "node sync.js"
+  },
+  "dependencies": {
+    "@actual-app/api": "^26.1.0",
+    "better-sqlite3-multiple-ciphers": "^9.0.0",
+    "dotenv": "^16.0.0"
+  }
+}

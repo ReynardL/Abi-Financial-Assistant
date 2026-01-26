@@ -1,0 +1,52 @@
+# Sensitive data
+.env
+.env.local
+.env.production
+backend/.env
+frontend/.env
+
+# User Data & Databases
+actual-data/
+data/
+*.sqlite
+*.db
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+*.egg-info/
+build/
+dist/
+*.spec.bak
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build Outputs
+frontend/dist/
+frontend/dist-electron/
+backend/dist/
+backend/build/
+
+# IDE & OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Temporary Files
+*.tmp
+*.temp
+temp-cache/
+bridge/temp-cache/
