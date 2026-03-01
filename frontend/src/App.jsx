@@ -25,27 +25,42 @@ function App() {
   const [modalImage, setModalImage] = useState(null);
   const [configMissing, setConfigMissing] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [backendStatus, setBackendStatus] = useState('checking'); 
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Check configuration on startup
+  // Check configuration on startup (with retries for backend startup)
   useEffect(() => {
-    const checkConfig = () => {
+    let cancelled = false;
+    const checkConfig = (retries = 15, delay = 2000) => {
       fetch('http://localhost:8000/settings')
-        .then(res => res.json())
+        .then(res => {
+          if (!res.ok) throw new Error(`Backend returned ${res.status}`);
+          return res.json();
+        })
         .then(data => {
-          // Must have OpenAI key and Actual credentials configured
+          if (cancelled) return;
+          setBackendStatus('connected');
           const isMissing = !data.has_openai || !data.has_password || !data.actual_sync_id;
           setConfigMissing(isMissing);
         })
-        .catch(() => {
-          setConfigMissing(true); 
+        .catch((err) => {
+          if (cancelled) return;
+          console.warn(`Backend check failed (${retries} retries left):`, err.message);
+          if (retries > 0) {
+            setBackendStatus('checking');
+            setTimeout(() => checkConfig(retries - 1, delay), delay);
+          } else {
+            setBackendStatus('disconnected');
+            setConfigMissing(true);
+          }
         });
     };
     checkConfig();
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
@@ -134,12 +149,26 @@ function App() {
         }),
       });
 
-      if (!response.ok) throw new Error('API Error');
+      if (!response.ok) {
+        let detail = `Backend error (HTTP ${response.status})`;
+        try {
+          const errBody = await response.json();
+          if (errBody.detail) detail = errBody.detail;
+          else if (errBody.reply) detail = errBody.reply;
+        } catch (_) {
+          try { detail = await response.text(); } catch (_) {}
+        }
+        throw new Error(detail);
+      }
 
       const data = await response.json();
       setMessages(prev => [...prev, { role: 'assistant', content: data.reply }]);
     } catch (error) {
-      setMessages(prev => [...prev, { role: 'assistant', content: "Sorry, I couldn't reach the backend server." }]);
+      const isNetworkError = error.message === 'Failed to fetch' || error.name === 'TypeError';
+      const errorMsg = isNetworkError
+        ? "Could not reach the backend server. It may still be starting up - please wait a moment and try again."
+        : `Something went wrong: ${error.message}`;
+      setMessages(prev => [...prev, { role: 'assistant', content: errorMsg }]);
     } finally {
       setIsLoading(false);
     }
@@ -277,8 +306,40 @@ function App() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Config Warning Banner */}
-      {configMissing === true && (
+      {/* Status Banners */}
+      {backendStatus === 'checking' && (
+        <div style={{
+          padding: '12px 20px',
+          backgroundColor: '#e3f2fd',
+          borderTop: '1px solid #90caf9',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          justifyContent: 'center'
+        }}>
+          <Loader2 size={16} className="spin" color="#1565c0" />
+          <span style={{ color: '#1565c0', fontSize: '14px' }}>
+            Connecting to backend server...
+          </span>
+        </div>
+      )}
+      {backendStatus === 'disconnected' && (
+        <div style={{
+          padding: '12px 20px',
+          backgroundColor: '#ffebee',
+          borderTop: '1px solid #ef5350',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          justifyContent: 'center'
+        }}>
+          <AlertTriangle size={18} color="#c62828" />
+          <span style={{ color: '#c62828', fontSize: '14px' }}>
+            Could not connect to backend server. Make sure the application was launched correctly.
+          </span>
+        </div>
+      )}
+      {backendStatus === 'connected' && configMissing === true && (
         <div style={{
           padding: '12px 20px',
           backgroundColor: '#fff3cd',
@@ -333,15 +394,15 @@ function App() {
           type="text" 
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={configMissing ? undefined : handleKeyDown}
-          disabled={configMissing}
-          placeholder={configMissing ? "Configure settings to start..." : "Ask about your spending..."}
+          onKeyDown={(configMissing || backendStatus !== 'connected') ? undefined : handleKeyDown}
+          disabled={configMissing || backendStatus !== 'connected'}
+          placeholder={backendStatus === 'checking' ? "Waiting for backend..." : backendStatus === 'disconnected' ? "Backend not available" : configMissing ? "Configure settings to start..." : "Ask about your spending..."}
           style={{
             flex: 1,
             padding: '12px 15px',
             borderRadius: '24px',
             border: '1px solid #d1d1d6',
-            backgroundColor: configMissing ? '#e5e5ea' : '#f2f2f7',
+            backgroundColor: (configMissing || backendStatus !== 'connected') ? '#e5e5ea' : '#f2f2f7',
             color: '#1d1d1f',
             outline: 'none',
             fontSize: '15px'
@@ -349,7 +410,7 @@ function App() {
         />
         <button 
           onClick={handleSend}
-          disabled={isLoading || !input.trim() || configMissing}
+          disabled={isLoading || !input.trim() || configMissing || backendStatus !== 'connected'}
           style={{
             width: '46px',
             height: '46px',
@@ -357,12 +418,12 @@ function App() {
             border: 'none',
             backgroundColor: '#6200ea',
             color: 'white',
-            cursor: configMissing ? 'not-allowed' : 'pointer',
+            cursor: (configMissing || backendStatus !== 'connected') ? 'not-allowed' : 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             padding: 0, 
-            opacity: isLoading || !input.trim() || configMissing ? 0.6 : 1,
+            opacity: isLoading || !input.trim() || configMissing || backendStatus !== 'connected' ? 0.6 : 1,
             transition: 'opacity 0.2s',
             flexShrink: 0
           }}
@@ -549,8 +610,14 @@ function App() {
                             if (res.ok) {
                                 alert('Data synced successfully!');
                             } else {
-                                const err = await res.text();
-                                alert('Sync failed: ' + (err || 'Check your Actual Budget credentials.'));
+                                let errMsg = 'Check your Actual Budget credentials.';
+                                try {
+                                    const errData = await res.json();
+                                    if (errData.detail) errMsg = errData.detail;
+                                } catch (_) {
+                                    try { errMsg = await res.text(); } catch (_) {}
+                                }
+                                alert('Sync failed: ' + errMsg);
                             }
                         } catch (e) {
                             alert('Could not connect to backend for sync.');

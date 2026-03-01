@@ -1,4 +1,6 @@
 import os
+import sys
+import logging
 import uuid
 import subprocess
 import json
@@ -11,6 +13,13 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from privacy_guard import PrivacyGuard
 from ddgs import DDGS
+
+if sys.stdout is None:
+    sys.stdout = open(os.devnull, 'w')
+if sys.stderr is None:
+    sys.stderr = open(os.devnull, 'w')
+
+logger = logging.getLogger(__name__)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # Support for packaged app, allow overriding paths via env vars
@@ -70,12 +79,21 @@ def _run_bridge_action(action_name: str, payload: dict):
     
     args = ["node", bridge_script, action_name, json.dumps(payload)]
     
+    # On Windows, prevent a CMD window from flashing for each subprocess call
+    kwargs = {}
+    if sys.platform == 'win32':
+        kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW
+    
     try:
-        result = subprocess.run(args, capture_output=True, text=True, check=True, env=env)
+        result = subprocess.run(args, capture_output=True, text=True, check=True, env=env, timeout=60, **kwargs)
         return result.stdout.strip()
+    except subprocess.TimeoutExpired:
+        raise Exception(f"Bridge Action '{action_name}' timed out after 60 seconds.")
     except subprocess.CalledProcessError as e:
-        error_msg = e.stderr if e.stderr else str(e)
-        raise Exception(f"Bridge Action Failed: {error_msg}")
+        error_msg = e.stderr.strip() if e.stderr else str(e)
+        raise Exception(f"Bridge Action '{action_name}' failed: {error_msg}")
+    except FileNotFoundError:
+        raise Exception(f"Bridge Action '{action_name}' failed: Node.js not found. Ensure Node.js is installed and on PATH.")
 
 
 def get_spending_category(month: str):
@@ -398,7 +416,7 @@ def web_search(query: str):
     """
     Performs a web search for general questions, budgeting advice, or comparisons.
     """
-    print(f"Searching the Web for: {query}")
+    logger.info(f"Searching the Web for: {query}")
     try:
         # region='wt-wt' gives broader results (World), 'us-en' or 'ca-en' for English.
         results = DDGS().text(query, region='wt-wt', max_results=3)

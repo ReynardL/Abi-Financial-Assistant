@@ -62,18 +62,29 @@ async function run() {
   }
   fs.mkdirSync(CACHE_DIR, { recursive: true });
 
-  await api.init({ 
-    dataDir: CACHE_DIR, 
-    serverURL: SERVER_URL,
-    password: PASSWORD 
-  });
+  try {
+    await api.init({ 
+      dataDir: CACHE_DIR, 
+      serverURL: SERVER_URL,
+      password: PASSWORD 
+    });
+  } catch (initError) {
+    console.error(`Error: Could not connect to Actual Budget server at ${SERVER_URL}. Make sure Actual Budget is running.`);
+    console.error(`Details: ${initError.message}`);
+    // Cleanup
+    try { fs.rmSync(CACHE_DIR, { recursive: true, force: true }); } catch(_) {}
+    process.exit(1);
+  }
 
   try {
     console.log(`1. Downloading Budget (ID: ${SYNC_ID})...`);
     
     await api.downloadBudget(SYNC_ID);
     
-    console.log('2. Sync Complete. Exporting SQL Data...');
+    console.log('2. Pulling latest changes...');
+    await api.sync();
+    
+    console.log('3. Sync Complete. Exporting SQL Data...');
     
     await api.shutdown();
 

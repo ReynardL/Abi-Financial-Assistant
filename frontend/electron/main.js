@@ -194,6 +194,35 @@ function createWindow() {
   });
 }
 
+// BACKEND HEALTH CHECK
+function waitForBackend(url, timeoutMs = 60000, intervalMs = 1000) {
+  const http = require('http');
+  return new Promise((resolve, reject) => {
+    const deadline = Date.now() + timeoutMs;
+    const check = () => {
+      const req = http.get(url, (res) => {
+        if (res.statusCode === 200) {
+          console.log('Backend is ready!');
+          resolve(true);
+        } else {
+          retry();
+        }
+      });
+      req.on('error', () => retry());
+      req.setTimeout(2000, () => { req.destroy(); retry(); });
+    };
+    const retry = () => {
+      if (Date.now() >= deadline) {
+        console.warn('Backend did not become ready within timeout, opening window anyway.');
+        resolve(false);
+      } else {
+        setTimeout(check, intervalMs);
+      }
+    };
+    check();
+  });
+}
+
 // APP LIFECYCLE
 app.whenReady().then(async () => {
   // 1. Ensure user data structure exists
@@ -206,10 +235,12 @@ app.whenReady().then(async () => {
   // 3. Start backend
   startBackend();
   
-  // 4. Wait for backend to initialize, then show window
-  setTimeout(() => {
-    createWindow();
-  }, app.isPackaged ? 3000 : 0);
+  // 4. Wait for backend to actually be ready, then show window
+  if (app.isPackaged) {
+    console.log('Waiting for backend to start...');
+    await waitForBackend('http://localhost:8000/health', 60000, 1000);
+  }
+  createWindow();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

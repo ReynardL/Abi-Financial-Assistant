@@ -1,4 +1,6 @@
 import os
+import sys
+import logging
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -8,6 +10,14 @@ from openai import OpenAI
 from dotenv import load_dotenv, set_key
 import json
 from datetime import datetime
+
+if sys.stdout is None:
+    sys.stdout = open(os.devnull, 'w')
+if sys.stderr is None:
+    sys.stderr = open(os.devnull, 'w')
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 # Support for packaged app, allow overriding paths via env vars
 ENV_PATH = os.environ.get('ABI_ENV_PATH', os.path.join(os.path.dirname(__file__), '../.env'))
@@ -19,6 +29,10 @@ from tools import TOOL_DEFINITIONS, AVAILABLE_TOOLS, guard, CHART_CACHE
 from refresh_data import refresh_data
 
 app = FastAPI(title="Abi Financial Assistant")
+
+@app.get("/health")
+async def health_check():
+    return {"status": "ok"}
 
 app.add_middleware(
     CORSMiddleware,
@@ -165,16 +179,17 @@ async def chat_endpoint(request: ChatRequest):
                 except json.JSONDecodeError:
                     function_args = {}
                 
-                print(f"🤖 Agent Calling: {function_name} with {function_args}")
+                logger.info(f"Agent Calling: {function_name} with {function_args}")
                 
                 function_to_call = AVAILABLE_TOOLS.get(function_name)
                 if function_to_call:
                     try:
                         tool_result = function_to_call(**function_args)
                     except Exception as e:
-                        tool_result = f"Error executing tool: {str(e)}"
+                        tool_result = f"Error executing '{function_name}': {str(e)}"
+                        logger.warning(f"Tool Error [{function_name}]: {str(e)}", exc_info=True)
                 else:
-                    tool_result = "Error: Tool not found."
+                    tool_result = f"Error: Tool '{function_name}' not found. Available tools: {list(AVAILABLE_TOOLS.keys())}"
 
                 messages.append({
                     "tool_call_id": tool_call.id,
@@ -185,19 +200,18 @@ async def chat_endpoint(request: ChatRequest):
             
         return {"reply": "I'm sorry, I reached the maximum number of steps (15) for this request and had to stop."}
     except Exception as e:
-        import traceback
-        error_trace = traceback.format_exc()
-        print(f"❌ Chat Error: {error_trace}")
+        logger.error(f"Chat Error: {str(e)}", exc_info=True)
         return {"reply": f"An error occurred: {str(e)}"}
 
 @app.post("/sync")
 async def trigger_sync():
     try:
-        success = refresh_data()
+        result = refresh_data()
+        success, message = result if isinstance(result, tuple) else (result, "")
         if success:
-            return {"status": "Data synced successfully"}
+            return {"status": message or "Data synced successfully"}
         else:
-            raise HTTPException(status_code=500, detail="Sync failed. Check logs for details.")
+            raise HTTPException(status_code=500, detail=message or "Sync failed. Check logs for details.")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
